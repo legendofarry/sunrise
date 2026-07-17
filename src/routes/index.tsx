@@ -49,10 +49,11 @@ function HomePage() {
         <Header />
         <main id="main">
           <Hero />
+          <ShakeSection className="sm:hidden" />
           <Categories />
           <Featured />
           <Promos />
-          <ShakeSection />
+          <ShakeSection className="hidden sm:block" />
           <Visit />
           <Reviews />
           <Gallery />
@@ -169,14 +170,14 @@ function Hero() {
             <span className="text-foreground/80">Open now · Walk-ins welcome</span>
           </div>
 
-          <h1 className="mt-5 font-display font-black leading-[0.92] tracking-[-0.03em] text-[2.75rem] sm:text-6xl md:text-7xl">
+          <h1 className="mt-5 hidden sm:block font-display font-black leading-[0.92] tracking-[-0.03em] text-[2.75rem] sm:text-6xl md:text-7xl">
             The corner of{" "}
             <span className="italic text-wine">Ngumba</span>
             <br />
             that pours <span className="text-gradient-gold">just right</span>.
           </h1>
 
-          <p className="mt-5 max-w-lg text-base sm:text-lg text-muted-foreground leading-relaxed">
+          <p className="mt-5 hidden sm:block max-w-lg text-base sm:text-lg text-muted-foreground leading-relaxed">
             Hand-picked wines, honest whisky, cold beers and a warm hello. We're the neighborhood
             shop that remembers your usual — and always finds you something new to try.
           </p>
@@ -510,9 +511,9 @@ function Promos() {
 
 /* ---------- Shake for a Sip ---------- */
 
-function ShakeSection() {
+function ShakeSection({ className }: { className?: string }) {
   return (
-    <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <section className={`${className ?? ""} mx-auto max-w-6xl px-4 sm:px-6 py-0 sm:py-24`}> 
       <ShakeForSip />
     </section>
   );
@@ -522,7 +523,7 @@ function ShakeSection() {
 
 function Visit() {
   return (
-    <section id="visit" className="py-16 sm:py-24 bg-wine text-cream">
+    <section className="py-16 sm:py-24 bg-wine text-cream">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 grid gap-10 lg:grid-cols-2">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-gold-soft">Visit</p>
@@ -556,10 +557,10 @@ function Visit() {
           </div>
         </div>
 
-        <div className="rounded-3xl overflow-hidden ring-1 ring-cream/10 min-h-[380px] bg-cream/5">
+        <div id="visit" className="rounded-3xl overflow-hidden ring-1 ring-cream/10 min-h-[380px] bg-cream/5">
           <iframe
             title="Sunrise Wines Ngumba Estate location"
-            src={`https://www.google.com/maps?q=${BUSINESS.mapsQuery}&z=15&output=embed`}
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.894486786641!2d36.8855617!3d-1.2330092!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f15df07a75137%3A0xa1fd0b870f589813!2sSunrise%20Wines%20Ngumba%20Estate!5e0!3m2!1sen!2ske!4v1784277646591!5m2!1sen!2ske"
             className="w-full h-full min-h-[380px] border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"

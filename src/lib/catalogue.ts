@@ -53,12 +53,12 @@ export const PRODUCTS: Product[] = [
 ];
 
 export const REVIEWS = [
-  { name: "Wanjiru M.", rating: 5, text: "My go-to shop in Ngumba. Fair prices, and Peter always recommends the perfect bottle for guests.", date: "2 weeks ago" },
-  { name: "Brian K.", rating: 5, text: "Ordered on WhatsApp before a match — ready in 10 minutes. Cannot beat that convenience.", date: "1 month ago" },
-  { name: "Amina O.", rating: 4, text: "Great wine selection for the neighborhood. Would love a few more sweet whites in stock.", date: "1 month ago" },
-  { name: "David N.", rating: 5, text: "Weekly promos are real value. Grabbed Jameson at a fantastic price last Friday.", date: "3 weeks ago" },
-  { name: "Cynthia R.", rating: 5, text: "Clean, well-lit shop and genuine bottles — no funny business. Highly recommended.", date: "2 months ago" },
-  { name: "Mwangi J.", rating: 5, text: "Best neighborhood liquor store around the estate. Friendly staff, quick service.", date: "5 days ago" },
+  { name: "Elispher Hunja", rating: 5, text: "Quality guaranteed.", date: "4 years ago" },
+  { name: "Rosemary Koech", rating: 5, text: "Good customer service, fast on deliveries and reliable.", date: "4 years ago" },
+  { name: "Isaac Musakala", rating: 5, text: "The best.", date: "4 years ago" },
+  { name: "Wanjia Muriithi", rating: 5, text: "For legit alcohol and best customer service — Sunrise Wines and Spirits got you.", date: "4 years ago" },
+  { name: "Grace Ndung'u", rating: 5, text: "Best liquor store around Ngumba Estate with unbeatable prices and great customer service!!", date: "4 years ago" },
+  { name: "Memo Maritim", rating: 5, text: "My favorite place for the last 4 years. Good customer service, quality 👌👌👌.", date: "4 years ago" },
 ];
 
 export const FAQS = [
