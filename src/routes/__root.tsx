@@ -77,14 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "theme-color", content: "#3d0d16" },
+      { title: "Sunrise Wines Ngumba Estate — Neighborhood Liquor Store, Nairobi" },
+      {
+        name: "description",
+        content:
+          "Sunrise Wines Ngumba Estate — your neighborhood wine, spirits and beer shop in Ngumba, Nairobi. Browse the catalogue, weekly promos, and reach us on WhatsApp.",
+      },
+      { name: "author", content: "Sunrise Wines Ngumba Estate" },
+      { property: "og:title", content: "Sunrise Wines Ngumba Estate" },
+      {
+        property: "og:description",
+        content:
+          "Neighborhood wine, spirits and beer in Ngumba Estate, Nairobi. Weekly promos, WhatsApp orders, walk-ins welcome.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Sunrise Wines Ngumba Estate" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -92,6 +101,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "LiquorStore",
+          name: "Sunrise Wines Ngumba Estate",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "Ngumba Estate, Thika Road",
+            addressLocality: "Nairobi",
+            addressCountry: "KE",
+          },
+          telephone: "+254712345678",
+          openingHours: ["Mo-Sa 09:00-23:00", "Su 10:00-22:00"],
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
