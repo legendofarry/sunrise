@@ -85,15 +85,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Sunrise Wines Ngumba Estate — your neighborhood wine, spirits and beer shop in Ngumba, Nairobi. Browse the catalogue, weekly promos, and reach us on WhatsApp.",
       },
       { name: "author", content: "Sunrise Wines Ngumba Estate" },
-      { property: "og:title", content: "Sunrise Wines Ngumba Estate" },
+      { property: "og:title", content: "Sunrise Wines Ngumba Estate — Neighborhood Liquor Store, Nairobi" },
       {
         property: "og:description",
         content:
-          "Neighborhood wine, spirits and beer in Ngumba Estate, Nairobi. Weekly promos, WhatsApp orders, walk-ins welcome.",
+          "Sunrise Wines Ngumba Estate — your neighborhood wine, spirits and beer shop in Ngumba, Nairobi. Browse the catalogue, weekly promos, and reach us on WhatsApp.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Sunrise Wines Ngumba Estate" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Sunrise Wines Ngumba Estate — Neighborhood Liquor Store, Nairobi" },
+      { name: "twitter:description", content: "Sunrise Wines Ngumba Estate — your neighborhood wine, spirits and beer shop in Ngumba, Nairobi. Browse the catalogue, weekly promos, and reach us on WhatsApp." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3ad188b2-6ebc-44b4-a955-250e322c3027" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3ad188b2-6ebc-44b4-a955-250e322c3027" },
     ],
     links: [
       {
