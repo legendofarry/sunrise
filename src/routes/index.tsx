@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import {
   Phone,
   MessageCircle,
@@ -70,16 +70,21 @@ function HomePage() {
 
 function Header() {
   const { scrollY } = useScroll();
-  const bg = useTransform(scrollY, [0, 80], ["rgba(247,242,232,0)", "rgba(247,242,232,0.85)"]);
+  const bg = useTransform(scrollY, [0, 80], ["rgba(247,242,232,0)", "rgba(247,242,232,0.88)"]);
   const border = useTransform(scrollY, [0, 80], ["rgba(0,0,0,0)", "rgba(0,0,0,0.06)"]);
+  const progress = useSpring(useTransform(scrollY, [0, 3000], [0, 1]), {
+    stiffness: 120,
+    damping: 24,
+    mass: 0.2,
+  });
 
   return (
     <motion.header
       style={{ backgroundColor: bg, borderColor: border }}
-      className="fixed top-0 inset-x-0 z-40 backdrop-blur-lg border-b transition"
+      className="fixed top-0 inset-x-0 z-40 backdrop-blur-xl border-b"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-        <a href="#top" className="flex items-center gap-2 group">
+        <a href="#top" className="flex items-center gap-2 group press">
           <span className="relative grid h-9 w-9 place-items-center rounded-full bg-wine text-cream">
             <WineIcon className="h-4 w-4" />
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-background" />
@@ -100,7 +105,7 @@ function Header() {
             ["Reviews", "#reviews"],
             ["FAQ", "#faq"],
           ].map(([label, href]) => (
-            <a key={href} href={href} className="text-foreground/70 hover:text-wine transition ring-focus">
+            <a key={href} href={href} className="relative text-foreground/70 hover:text-wine transition ring-focus after:absolute after:left-0 after:right-0 after:-bottom-1 after:h-px after:origin-left after:scale-x-0 after:bg-wine after:transition-transform hover:after:scale-x-100">
               {label}
             </a>
           ))}
@@ -110,11 +115,16 @@ function Header() {
           href={whatsappLink()}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-wine-deep transition ring-focus"
+          className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-3.5 py-2 text-xs sm:text-sm font-semibold hover:bg-wine-deep transition ring-focus press shadow-sm"
         >
           <MessageCircle className="h-4 w-4" /> WhatsApp
         </a>
       </div>
+      <motion.div
+        style={{ scaleX: progress }}
+        className="absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-wine via-gold to-wine"
+        aria-hidden
+      />
     </motion.header>
   );
 }
@@ -122,15 +132,17 @@ function Header() {
 /* ---------- Hero ---------- */
 
 function Hero() {
+  const reduce = useReducedMotion();
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 400], [0, 80]);
-  const scale = useTransform(scrollY, [0, 400], [1, 1.08]);
+  const y = useTransform(scrollY, [0, 400], [0, reduce ? 0 : 80]);
+  const scale = useTransform(scrollY, [0, 400], [1, reduce ? 1 : 1.08]);
+  const fade = useTransform(scrollY, [0, 400], [1, 0.4]);
 
   return (
-    <section id="top" className="relative overflow-hidden pt-20 sm:pt-24 pb-16 sm:pb-24">
+    <section id="top" className="relative overflow-hidden pt-24 sm:pt-28 pb-20 sm:pb-28">
       {/* Backdrop image */}
       <motion.div
-        style={{ y, scale }}
+        style={{ y, scale, opacity: fade }}
         className="absolute inset-0 -z-10"
         aria-hidden
       >
@@ -147,9 +159,9 @@ function Hero() {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-2xl"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-wine/15 bg-cream/60 backdrop-blur px-3 py-1 text-xs">
@@ -157,14 +169,14 @@ function Hero() {
             <span className="text-foreground/80">Open now · Walk-ins welcome</span>
           </div>
 
-          <h1 className="mt-5 font-display font-black leading-[0.95] tracking-tight text-5xl sm:text-6xl md:text-7xl">
+          <h1 className="mt-5 font-display font-black leading-[0.92] tracking-[-0.03em] text-[2.75rem] sm:text-6xl md:text-7xl">
             The corner of{" "}
             <span className="italic text-wine">Ngumba</span>
             <br />
             that pours <span className="text-gradient-gold">just right</span>.
           </h1>
 
-          <p className="mt-5 max-w-lg text-base sm:text-lg text-muted-foreground">
+          <p className="mt-5 max-w-lg text-base sm:text-lg text-muted-foreground leading-relaxed">
             Hand-picked wines, honest whisky, cold beers and a warm hello. We're the neighborhood
             shop that remembers your usual — and always finds you something new to try.
           </p>
@@ -174,14 +186,14 @@ function Hero() {
               href={whatsappLink()}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-5 py-3 text-sm font-semibold hover:bg-wine-deep transition ring-focus"
+              className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-6 py-3.5 text-sm font-semibold hover:bg-wine-deep transition ring-focus press shadow-lg shadow-wine/20 min-h-11"
             >
               <MessageCircle className="h-4 w-4" />
               Order on WhatsApp
             </a>
             <a
               href="#visit"
-              className="inline-flex items-center gap-2 rounded-full border border-wine/20 bg-cream/60 backdrop-blur px-5 py-3 text-sm font-semibold hover:bg-cream transition ring-focus"
+              className="inline-flex items-center gap-2 rounded-full border border-wine/20 bg-cream/60 backdrop-blur px-6 py-3.5 text-sm font-semibold hover:bg-cream hover:border-wine/40 transition ring-focus press min-h-11"
             >
               <MapPin className="h-4 w-4" /> Find the shop
             </a>
@@ -202,19 +214,27 @@ function Hero() {
 
 function Stat({ n, label }: { n: string; label: string }) {
   return (
-    <div>
-      <p className="font-display text-2xl sm:text-3xl font-bold text-wine">{n}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <p className="font-display text-2xl sm:text-3xl font-bold text-wine tabular">{n}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+    </motion.div>
   );
 }
 
 function ScrollHint() {
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 120], [1, 0]);
   return (
     <motion.div
+      style={{ opacity }}
       className="mt-14 hidden sm:flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-muted-foreground"
       animate={{ y: [0, 6, 0] }}
-      transition={{ duration: 2, repeat: Infinity }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
     >
       <ChevronDown className="h-4 w-4" /> Scroll to browse
     </motion.div>
@@ -244,45 +264,51 @@ function Categories() {
   const showing = query.trim() || activeCat;
 
   return (
-    <section id="categories" className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <section id="categories" className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
       <SectionHead
         eyebrow="The shelves"
         title="Browse the categories"
         blurb="Not sure what you want? Tell us the vibe on WhatsApp — we'll pack a bag."
       />
 
-      {/* Search */}
-      <div className="mt-8 relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search wines, whisky, gin, cocktails…"
-          className="w-full rounded-full border border-wine/15 bg-cream/60 backdrop-blur pl-11 pr-11 py-3 text-sm outline-none focus:border-wine transition ring-focus"
-          aria-label="Search the catalogue"
-        />
-        {query && (
-          <button
-            onClick={() => setQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 hover:bg-wine/10"
-            aria-label="Clear search"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Chips */}
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Chip active={activeCat === null} onClick={() => setActiveCat(null)}>
-          All
-        </Chip>
-        {CATEGORIES.map((c) => (
-          <Chip key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
-            <span className="mr-1">{c.emoji}</span>
-            {c.name}
+      {/* Sticky search + chips */}
+      <div className="sticky top-14 sm:top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 pb-3 mt-6 bg-background/85 backdrop-blur-xl">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search wines, whisky, gin, cocktails…"
+            className="w-full rounded-full border border-wine/15 bg-cream/80 backdrop-blur pl-11 pr-11 py-3.5 text-sm outline-none focus:border-wine focus:bg-cream transition ring-focus placeholder:text-muted-foreground"
+            aria-label="Search the catalogue"
+            enterKeyHint="search"
+          />
+          <AnimatePresence>
+            {query && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 hover:bg-wine/10 ring-focus"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="mt-3 -mx-4 sm:mx-0 flex sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible hide-scrollbar px-4 sm:px-0 snap-x snap-mandatory">
+          <Chip active={activeCat === null} onClick={() => setActiveCat(null)}>
+            All
           </Chip>
-        ))}
+          {CATEGORIES.map((c) => (
+            <Chip key={c.id} active={activeCat === c.id} onClick={() => setActiveCat(c.id)}>
+              <span className="mr-1">{c.emoji}</span>
+              {c.name}
+            </Chip>
+          ))}
+        </div>
       </div>
 
       {/* Results OR category grid */}
@@ -295,10 +321,10 @@ function Categories() {
                   <motion.div
                     key={p.id}
                     layout
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 26, delay: i * 0.03 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 26, delay: Math.min(i * 0.03, 0.25) }}
                   >
                     <ProductCard p={p} />
                   </motion.div>
@@ -306,9 +332,20 @@ function Categories() {
               </AnimatePresence>
             </div>
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">
-              No match yet — ask us on WhatsApp, we probably have something close.
-            </p>
+            <div className="mt-8 rounded-3xl border border-dashed border-wine/20 bg-cream/40 p-10 text-center">
+              <p className="font-display text-lg font-semibold">No match — yet.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We probably have something close. Ask on WhatsApp and we'll dig on the shelf.
+              </p>
+              <a
+                href={whatsappLink(`Hi! I'm looking for "${query}". Do you have anything close?`)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-wine text-cream px-4 py-2 text-sm font-semibold hover:bg-wine-deep transition ring-focus press"
+              >
+                <MessageCircle className="h-4 w-4" /> Ask on WhatsApp
+              </a>
+            </div>
           )}
         </div>
       ) : (
@@ -317,19 +354,21 @@ function Categories() {
             <motion.button
               key={c.id}
               onClick={() => setActiveCat(c.id)}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.4, delay: i * 0.04 }}
-              whileHover={{ y: -4 }}
-              className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${c.accent} p-5 text-left text-cream aspect-[3/4] flex flex-col justify-between ring-focus`}
+              transition={{ duration: 0.55, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -6 }}
+              whileTap={{ scale: 0.97 }}
+              className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${c.accent} p-5 text-left text-cream aspect-[3/4] flex flex-col justify-between ring-focus shadow-md hover:shadow-2xl transition-shadow`}
             >
-              <span className="text-3xl">{c.emoji}</span>
+              <span className="text-3xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">{c.emoji}</span>
               <div>
-                <p className="font-display text-xl font-bold">{c.name}</p>
+                <p className="font-display text-xl font-bold leading-tight">{c.name}</p>
                 <p className="mt-1 text-[11px] text-cream/70 line-clamp-2">{c.blurb}</p>
               </div>
-              <ArrowRight className="absolute top-4 right-4 h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition" />
+              <ArrowRight className="absolute top-4 right-4 h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition duration-300" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </motion.button>
           ))}
         </div>
@@ -348,45 +387,47 @@ function Chip({
   onClick?: () => void;
 }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      className={`rounded-full px-4 py-1.5 text-sm border transition ring-focus ${
+      className={`shrink-0 snap-start rounded-full px-4 py-2 text-sm border transition ring-focus min-h-9 ${
         active
-          ? "bg-wine text-cream border-wine"
-          : "bg-cream/60 text-foreground/70 border-wine/15 hover:border-wine/40"
+          ? "bg-wine text-cream border-wine shadow-md shadow-wine/20"
+          : "bg-cream/70 text-foreground/70 border-wine/15 hover:border-wine/40 hover:bg-cream"
       }`}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
 function ProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
   const cat = CATEGORIES.find((c) => c.id === p.category);
   return (
-    <div className="group relative rounded-2xl border border-wine/10 bg-card p-5 hover:shadow-lg hover:-translate-y-0.5 transition">
+    <div className="group relative rounded-2xl border border-wine/10 bg-card p-5 hover:shadow-xl hover:shadow-wine/5 hover:-translate-y-1 hover:border-wine/20 transition-all duration-300 h-full flex flex-col">
+      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             {cat?.emoji} {cat?.name} · {p.origin}
           </p>
-          <h3 className="mt-1 font-display text-lg font-bold leading-tight">{p.name}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{p.size} · {p.notes}</p>
+          <h3 className="mt-1.5 font-display text-lg font-bold leading-tight">{p.name}</h3>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{p.size} · {p.notes}</p>
         </div>
         {p.promo && (
-          <span className="shrink-0 rounded-full bg-wine/10 text-wine text-[10px] font-semibold px-2 py-1 uppercase tracking-wide">
+          <span className="shrink-0 rounded-full bg-wine text-cream text-[10px] font-semibold px-2 py-1 uppercase tracking-wide shadow-sm">
             {p.promo.label}
           </span>
         )}
       </div>
-      <div className="mt-4 flex items-end justify-between">
+      <div className="mt-auto pt-4 flex items-end justify-between gap-3">
         <div>
           {p.promo && (
-            <p className="text-xs text-muted-foreground line-through">
+            <p className="text-xs text-muted-foreground line-through tabular">
               KES {p.promo.was.toLocaleString()}
             </p>
           )}
-          <p className="font-display text-xl font-bold text-wine">
+          <p className="font-display text-xl font-bold text-wine tabular">
             KES {p.price.toLocaleString()}
           </p>
         </div>
@@ -394,9 +435,10 @@ function ProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
           href={whatsappLink(`Hi! Is the ${p.name} (${p.size}) in stock?`)}
           target="_blank"
           rel="noreferrer"
-          className="text-xs font-semibold text-wine hover:text-wine-deep inline-flex items-center gap-1 ring-focus"
+          className="text-xs font-semibold text-wine hover:text-wine-deep inline-flex items-center gap-1 ring-focus group/link"
         >
-          Ask on WhatsApp <ArrowRight className="h-3.5 w-3.5" />
+          Ask on WhatsApp
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />
         </a>
       </div>
     </div>
@@ -408,7 +450,7 @@ function ProductCard({ p }: { p: (typeof PRODUCTS)[number] }) {
 function Featured() {
   const featured = PRODUCTS.filter((p) => p.featured);
   return (
-    <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <section className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
       <SectionHead
         eyebrow="Featured"
         title="This week's picks"
@@ -418,10 +460,10 @@ function Featured() {
         {featured.map((p, i) => (
           <motion.div
             key={p.id}
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
-            transition={{ type: "spring", stiffness: 200, damping: 22, delay: i * 0.05 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: i * 0.06 }}
           >
             <ProductCard p={p} />
           </motion.div>
@@ -591,7 +633,7 @@ function Gallery() {
     { src: gal3, alt: "Craft beers in an ice bucket", span: "" },
   ];
   return (
-    <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+    <section className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
       <SectionHead
         eyebrow="Inside the shop"
         title="A look around"
@@ -599,24 +641,36 @@ function Gallery() {
       />
       <div className="mt-8 grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] sm:auto-rows-[180px] gap-3">
         {items.map((it, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ delay: i * 0.05, duration: 0.5 }}
-            className={`overflow-hidden rounded-2xl bg-muted ${it.span}`}
-          >
-            <img
-              src={it.src}
-              alt={it.alt}
-              loading="lazy"
-              className="h-full w-full object-cover hover:scale-105 transition duration-700"
-            />
-          </motion.div>
+          <GalleryTile key={i} src={it.src} alt={it.alt} span={it.span} index={i} />
         ))}
       </div>
     </section>
+  );
+}
+
+function GalleryTile({ src, alt, span, index }: { src: string; alt: string; span: string; index: number }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ delay: index * 0.06, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className={`group relative overflow-hidden rounded-2xl bg-wine/5 ${span}`}
+    >
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-wine/5 via-gold/10 to-wine/5" />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={`h-full w-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    </motion.div>
   );
 }
 
@@ -727,47 +781,74 @@ function Footer() {
 
 function FloatingActions() {
   const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 300);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-0 right-0 z-50 flex flex-col items-end gap-3 p-4 sm:p-5 safe-bottom pointer-events-none">
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            initial={{ opacity: 0, y: 12, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 300, damping: 22 }}
-            className="flex flex-col gap-2"
+            exit={{ opacity: 0, y: 12, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 320, damping: 24 }}
+            className="flex flex-col gap-2 pointer-events-auto"
           >
             <a
               href={whatsappLink()}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-[oklch(0.55_0.16_150)] text-white px-4 py-3 text-sm font-semibold shadow-lg hover:brightness-110 ring-focus"
+              className="inline-flex items-center gap-2 rounded-full bg-[oklch(0.55_0.16_150)] text-white px-5 py-3 text-sm font-semibold shadow-xl hover:brightness-110 ring-focus press min-h-11"
             >
               <MessageCircle className="h-4 w-4" /> WhatsApp
             </a>
             <a
               href={telLink}
-              className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-4 py-3 text-sm font-semibold shadow-lg hover:bg-wine-deep ring-focus"
+              className="inline-flex items-center gap-2 rounded-full bg-wine text-cream px-5 py-3 text-sm font-semibold shadow-xl hover:bg-wine-deep ring-focus press min-h-11"
             >
               <Phone className="h-4 w-4" /> Call
             </a>
           </motion.div>
         )}
       </AnimatePresence>
-      <motion.button
-        onClick={() => setOpen((v) => !v)}
-        whileTap={{ scale: 0.9 }}
-        animate={{ rotate: open ? 45 : 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 18 }}
-        className="grid h-14 w-14 place-items-center rounded-full bg-wine text-cream shadow-xl ring-4 ring-cream/40 ring-focus"
-        aria-label={open ? "Close contact menu" : "Open contact menu"}
-        aria-expanded={open}
-      >
-        <svg viewBox="0 0 16 16" className="h-5 w-5">
-          <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </motion.button>
+      <AnimatePresence>
+        {visible && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.6, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.6, y: 20 }}
+            transition={{ type: "spring", stiffness: 320, damping: 22 }}
+            onClick={() => setOpen((v) => !v)}
+            whileTap={{ scale: 0.9 }}
+            className="pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-wine text-cream shadow-2xl shadow-wine/40 ring-4 ring-cream/50 ring-focus"
+            aria-label={open ? "Close contact menu" : "Open contact menu"}
+            aria-expanded={open}
+          >
+            <motion.svg
+              viewBox="0 0 16 16"
+              className="h-5 w-5"
+              animate={{ rotate: open ? 45 : 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 18 }}
+            >
+              <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </motion.svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -784,12 +865,18 @@ function SectionHead({
   blurb?: string;
 }) {
   return (
-    <div className="max-w-2xl">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="max-w-2xl"
+    >
       <p className="text-xs uppercase tracking-[0.3em] text-wine font-semibold">{eyebrow}</p>
-      <h2 className="mt-2 font-display text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+      <h2 className="mt-3 font-display text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.025em]">
         {title}
       </h2>
-      {blurb && <p className="mt-3 text-muted-foreground">{blurb}</p>}
-    </div>
+      {blurb && <p className="mt-4 text-muted-foreground leading-relaxed">{blurb}</p>}
+    </motion.div>
   );
 }
