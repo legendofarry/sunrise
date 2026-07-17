@@ -11,7 +11,7 @@ export function AgeGate() {
   useEffect(() => {
     try {
       if (localStorage.getItem(KEY) !== "1") setOpen(true);
-    } catch {
+    } catch (e) {
       setOpen(true);
     }
   }, []);
@@ -26,7 +26,9 @@ export function AgeGate() {
   const confirm = () => {
     try {
       localStorage.setItem(KEY, "1");
-    } catch {}
+    } catch (e) {
+      // ignore
+    }
     setOpen(false);
   };
 
@@ -65,13 +67,18 @@ export function AgeGate() {
               Are you 18 or older?
             </h1>
             <p className="mt-3 text-center text-sm text-muted-foreground">
-              You must be of legal drinking age in Kenya to enter this site. Please drink responsibly.
+              You must be of legal drinking age in Kenya to enter this site. Please drink
+              responsibly.
             </p>
 
             {denied ? (
               <div className="mt-6 rounded-2xl bg-wine/10 p-5 text-center">
-                <p className="font-display text-lg font-semibold text-wine">Sorry — you must be 18+.</p>
-                <p className="mt-1 text-sm text-muted-foreground">Come back and see us when you're of age.</p>
+                <p className="font-display text-lg font-semibold text-wine">
+                  Sorry — you must be 18+.
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Come back and see us when you're of age.
+                </p>
               </div>
             ) : (
               <div className="mt-6 grid grid-cols-2 gap-3">

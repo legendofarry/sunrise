@@ -1,11 +1,23 @@
 import { useState, useEffect } from "react";
-import { motion, useMotionValue, useSpring, useTransform, useAnimationControls } from "framer-motion";
-import { Sparkles, RefreshCw } from "lucide-react";
-import { MYSTERY_POURS } from "@/lib/catalogue";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useAnimationControls,
+  AnimatePresence,
+} from "framer-motion";
+import { Sparkles, RefreshCw, Check } from "lucide-react";
+import { CATEGORIES, PRODUCTS } from "@/lib/catalogue";
 import { whatsappLink } from "@/lib/business";
 
 // Shake detection: user gives a quick initial shake, app auto-animates the bottle, then reveals.
 export function ShakeForSip() {
+  const [preferences, setPreferences] = useState<string[]>([]);
+  const [hasSetPreferences, setHasSetPreferences] = useState<boolean>(false);
+  const [showPreferencesUi, setShowPreferencesUi] = useState(false);
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
+
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [shakes, setShakes] = useState(0);
@@ -17,11 +29,30 @@ export function ShakeForSip() {
   const glow = useTransform(springX, [-160, 0, 160], [0.9, 0.3, 0.9]);
   const controls = useAnimationControls();
 
-  const pour = MYSTERY_POURS[idx % MYSTERY_POURS.length];
+  useEffect(() => {
+    const saved = localStorage.getItem("sunrise_drink_prefs");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPreferences(parsed);
+          setHasSetPreferences(true);
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  const pool =
+    hasSetPreferences && preferences.length > 0
+      ? PRODUCTS.filter((p) => preferences.includes(p.category))
+      : PRODUCTS;
+
+  const validPool = pool.length > 0 ? pool : PRODUCTS;
+  const pour = validPool[idx % validPool.length];
 
   const shuffle = () => {
-    const next = Math.floor(Math.random() * MYSTERY_POURS.length);
-    setIdx(next === idx ? (next + 1) % MYSTERY_POURS.length : next);
+    const next = Math.floor(Math.random() * validPool.length);
+    setIdx(next === idx ? (next + 1) % validPool.length : next);
     setShakes((s) => s + 1);
   };
 
@@ -29,19 +60,42 @@ export function ShakeForSip() {
     shuffle();
     setIsAutoShaking(true);
     setRevealed(false);
-    
+
     // Auto-shake animation
-    controls.start({
-      x: [-120, 120, -120, 120, -80, 80, -40, 40, 0],
-      transition: {
-        duration: 1.2,
-        ease: "easeInOut",
-        times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.85, 0.95, 1],
-      },
-    }).then(() => {
-      setIsAutoShaking(false);
-      setRevealed(true);
-    });
+    controls
+      .start({
+        x: [-120, 120, -120, 120, -80, 80, -40, 40, 0],
+        transition: {
+          duration: 1.2,
+          ease: "easeInOut",
+          times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.85, 0.95, 1],
+        },
+      })
+      .then(() => {
+        setIsAutoShaking(false);
+        setRevealed(true);
+      });
+  };
+
+  const handleStartInteraction = () => {
+    if (!hasSetPreferences && !showPreferencesUi) {
+      setShowPreferencesUi(true);
+    } else {
+      initiateShake();
+    }
+  };
+
+  const savePreferences = () => {
+    if (selectedCats.length === 0) return;
+    localStorage.setItem("sunrise_drink_prefs", JSON.stringify(selectedCats));
+    setPreferences(selectedCats);
+    setHasSetPreferences(true);
+    setShowPreferencesUi(false);
+    initiateShake();
+  };
+
+  const toggleCat = (id: string) => {
+    setSelectedCats((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   };
 
   useEffect(() => {
@@ -49,14 +103,13 @@ export function ShakeForSip() {
     const handleDeviceMotion = (event: DeviceMotionEvent) => {
       const acc = event.accelerationIncludingGravity;
       if (!acc) return;
-      
+
       const acceleration = Math.sqrt(acc.x! * acc.x! + acc.y! * acc.y! + acc.z! * acc.z!);
       const now = Date.now();
-      
-      // Detect a sharp shake (acceleration > 30) with cooldown of 1.5 seconds
+
       if (acceleration > 30 && now - lastShakeTime > 1500 && !isAutoShaking) {
         lastShakeTime = now;
-        initiateShake();
+        handleStartInteraction();
       }
     };
 
@@ -64,7 +117,8 @@ export function ShakeForSip() {
       window.addEventListener("devicemotion", handleDeviceMotion);
       return () => window.removeEventListener("devicemotion", handleDeviceMotion);
     }
-  }, [isAutoShaking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoShaking, hasSetPreferences, showPreferencesUi]);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-wine/10 bg-gradient-to-br from-wine-deep via-wine to-[oklch(0.28_0.11_20)] p-6 sm:p-10 text-cream">
@@ -82,26 +136,27 @@ export function ShakeForSip() {
             <span className="text-gradient-gold">Meet your pour.</span>
           </h3>
           <p className="mt-3 text-sm text-cream/70 max-w-sm">
-            Drag the bottle side-to-side and let it go. We'll suggest a drink for the mood —
-            no menu required.
+            Drag the bottle side-to-side and let it go. We'll suggest a drink for the mood — no menu
+            required.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
-              onClick={initiateShake}
+              onClick={handleStartInteraction}
               disabled={isAutoShaking}
               className="inline-flex items-center gap-2 rounded-full bg-cream text-wine px-5 py-2.5 text-sm font-semibold hover:bg-gold hover:text-wine-deep transition ring-focus disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${isAutoShaking ? "animate-spin" : ""}`} /> {isAutoShaking ? "Shaking..." : "Give me another"}
+              <RefreshCw className={`h-4 w-4 ${isAutoShaking ? "animate-spin" : ""}`} />{" "}
+              {isAutoShaking ? "Shaking..." : "Give me another"}
             </button>
             {revealed && (
               <a
-                href={whatsappLink(`Hi! I'd like to order ingredients for a "${pour.name}".`)}
+                href={whatsappLink(`Hi! I'd like to order a bottle of "${pour.name}".`)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-cream/30 px-5 py-2.5 text-sm font-semibold hover:bg-cream/10 transition ring-focus"
               >
-                Order the ingredients →
+                Order this drink →
               </a>
             )}
           </div>
@@ -124,9 +179,11 @@ export function ShakeForSip() {
             dragConstraints={{ left: -140, right: 140 }}
             dragElastic={0.6}
             onDragEnd={(_, info) => {
-              // Trigger on quick swipe (velocity > 300) or any drag movement while not already shaking
-              if (!isAutoShaking && (Math.abs(info.velocity.x) > 300 || Math.abs(info.offset.x) > 40)) {
-                initiateShake();
+              if (
+                !isAutoShaking &&
+                (Math.abs(info.velocity.x) > 300 || Math.abs(info.offset.x) > 40)
+              ) {
+                handleStartInteraction();
               }
             }}
             animate={controls}
@@ -154,14 +211,43 @@ export function ShakeForSip() {
                 fill="url(#glass)"
               />
               <rect x="30" y="110" width="40" height="70" rx="4" fill="url(#label)" />
-              <text x="50" y="140" textAnchor="middle" fontSize="9" fontFamily="Outfit" fontWeight="700" fill="oklch(0.34 0.13 15)">
+              <text
+                x="50"
+                y="140"
+                textAnchor="middle"
+                fontSize="9"
+                fontFamily="Outfit"
+                fontWeight="700"
+                fill="oklch(0.34 0.13 15)"
+              >
                 SUNRISE
               </text>
-              <text x="50" y="154" textAnchor="middle" fontSize="6.5" fontFamily="Outfit" fill="oklch(0.34 0.13 15)">
+              <text
+                x="50"
+                y="154"
+                textAnchor="middle"
+                fontSize="6.5"
+                fontFamily="Outfit"
+                fill="oklch(0.34 0.13 15)"
+              >
                 NGUMBA · EST
               </text>
-              <line x1="34" y1="162" x2="66" y2="162" stroke="oklch(0.78 0.13 82)" strokeWidth="1" />
-              <text x="50" y="174" textAnchor="middle" fontSize="5.5" fontFamily="Figtree" fill="oklch(0.34 0.13 15)">
+              <line
+                x1="34"
+                y1="162"
+                x2="66"
+                y2="162"
+                stroke="oklch(0.78 0.13 82)"
+                strokeWidth="1"
+              />
+              <text
+                x="50"
+                y="174"
+                textAnchor="middle"
+                fontSize="5.5"
+                fontFamily="Figtree"
+                fill="oklch(0.34 0.13 15)"
+              >
                 HOUSE RESERVE
               </text>
               <ellipse cx="38" cy="60" rx="3" ry="18" fill="oklch(1 0 0 / 0.15)" />
@@ -170,24 +256,76 @@ export function ShakeForSip() {
         </div>
       </div>
 
-      <motion.div
-        key={pour.name + revealed}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="relative mt-6 rounded-2xl bg-cream/10 backdrop-blur border border-cream/10 p-5"
-      >
-        {revealed ? (
-          <>
-            <p className="text-[11px] uppercase tracking-[0.25em] text-gold-soft">Tonight's pour</p>
-            <h4 className="mt-1 font-display text-2xl font-bold">{pour.name}</h4>
-            <p className="mt-1 text-sm text-cream/70">{pour.spec}</p>
-            <p className="mt-2 text-xs italic text-cream/50">— {pour.vibe}</p>
-          </>
+      <AnimatePresence mode="wait">
+        {showPreferencesUi ? (
+          <motion.div
+            key="preferences"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="relative mt-6 rounded-2xl bg-cream/10 backdrop-blur border border-cream/10 p-5"
+          >
+            <h4 className="font-display text-xl font-bold">What are you into?</h4>
+            <p className="text-sm text-cream/70 mb-4">
+              Select what you like, and we'll only pour from those.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {CATEGORIES.map((c) => {
+                const selected = selectedCats.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleCat(c.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? "bg-gold text-wine-deep font-medium"
+                        : "bg-black/20 text-cream/80 hover:bg-black/40"
+                    }`}
+                  >
+                    <span>{c.emoji}</span>
+                    <span>{c.name}</span>
+                    {selected && <Check className="h-3 w-3" />}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={savePreferences}
+              disabled={selectedCats.length === 0}
+              className="inline-flex w-full sm:w-auto justify-center items-center rounded-full bg-cream px-5 py-2 text-sm font-semibold text-wine disabled:opacity-50 transition"
+            >
+              Confirm & Shake
+            </button>
+          </motion.div>
         ) : (
-          <p className="text-sm text-cream/60">Give the bottle a good shake to reveal your pour…</p>
+          <motion.div
+            key={pour.name + revealed}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="relative mt-6 rounded-2xl bg-cream/10 backdrop-blur border border-cream/10 p-5"
+          >
+            {revealed ? (
+              <>
+                <p className="text-[11px] uppercase tracking-[0.25em] text-gold-soft">
+                  Tonight's pour
+                </p>
+                <h4 className="mt-1 font-display text-2xl font-bold">{pour.name}</h4>
+                <p className="mt-1 text-sm text-cream/70">
+                  {pour.origin && `${pour.origin} · `}
+                  {CATEGORIES.find((c) => c.id === pour.category)?.name}
+                </p>
+                {pour.notes && <p className="mt-2 text-xs italic text-cream/50">— {pour.notes}</p>}
+              </>
+            ) : (
+              <p className="text-sm text-cream/60">
+                Give the bottle a good shake to reveal your pour…
+              </p>
+            )}
+          </motion.div>
         )}
-      </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

@@ -156,7 +156,11 @@
     overscroll-behavior-y: none;
   }
 
-  h1, h2, h3, h4, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
     text-wrap: balance;
@@ -223,7 +227,9 @@
 }
 
 @utility press {
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
   &:active {
     transform: scale(0.97);
   }
