@@ -1,29 +1,70 @@
-import { useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, useMotionValue, useSpring, useTransform, useAnimationControls } from "framer-motion";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { MYSTERY_POURS } from "@/lib/catalogue";
 import { whatsappLink } from "@/lib/business";
 
-// Draggable bottle: fling it side-to-side to reveal a mystery pour.
-// Uses spring physics + velocity threshold. Every "shake" cycles a new pour.
+// Shake detection: user gives a quick initial shake, app auto-animates the bottle, then reveals.
 export function ShakeForSip() {
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [shakes, setShakes] = useState(0);
+  const [isAutoShaking, setIsAutoShaking] = useState(false);
 
   const x = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 300, damping: 14 });
   const rotate = useTransform(springX, [-160, 0, 160], [-24, 0, 24]);
   const glow = useTransform(springX, [-160, 0, 160], [0.9, 0.3, 0.9]);
+  const controls = useAnimationControls();
 
   const pour = MYSTERY_POURS[idx % MYSTERY_POURS.length];
 
   const shuffle = () => {
     const next = Math.floor(Math.random() * MYSTERY_POURS.length);
     setIdx(next === idx ? (next + 1) % MYSTERY_POURS.length : next);
-    setRevealed(true);
     setShakes((s) => s + 1);
   };
+
+  const initiateShake = () => {
+    shuffle();
+    setIsAutoShaking(true);
+    setRevealed(false);
+    
+    // Auto-shake animation
+    controls.start({
+      x: [-120, 120, -120, 120, -80, 80, -40, 40, 0],
+      transition: {
+        duration: 1.2,
+        ease: "easeInOut",
+        times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.85, 0.95, 1],
+      },
+    }).then(() => {
+      setIsAutoShaking(false);
+      setRevealed(true);
+    });
+  };
+
+  useEffect(() => {
+    let lastShakeTime = 0;
+    const handleDeviceMotion = (event: DeviceMotionEvent) => {
+      const acc = event.accelerationIncludingGravity;
+      if (!acc) return;
+      
+      const acceleration = Math.sqrt(acc.x! * acc.x! + acc.y! * acc.y! + acc.z! * acc.z!);
+      const now = Date.now();
+      
+      // Detect a sharp shake (acceleration > 30) with cooldown of 1.5 seconds
+      if (acceleration > 30 && now - lastShakeTime > 1500 && !isAutoShaking) {
+        lastShakeTime = now;
+        initiateShake();
+      }
+    };
+
+    if (typeof window !== "undefined" && "DeviceMotionEvent" in window) {
+      window.addEventListener("devicemotion", handleDeviceMotion);
+      return () => window.removeEventListener("devicemotion", handleDeviceMotion);
+    }
+  }, [isAutoShaking]);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-wine/10 bg-gradient-to-br from-wine-deep via-wine to-[oklch(0.28_0.11_20)] p-6 sm:p-10 text-cream">
@@ -47,10 +88,11 @@ export function ShakeForSip() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
-              onClick={shuffle}
-              className="inline-flex items-center gap-2 rounded-full bg-cream text-wine px-5 py-2.5 text-sm font-semibold hover:bg-gold hover:text-wine-deep transition ring-focus"
+              onClick={initiateShake}
+              disabled={isAutoShaking}
+              className="inline-flex items-center gap-2 rounded-full bg-cream text-wine px-5 py-2.5 text-sm font-semibold hover:bg-gold hover:text-wine-deep transition ring-focus disabled:opacity-50"
             >
-              <RefreshCw className="h-4 w-4" /> Give me another
+              <RefreshCw className={`h-4 w-4 ${isAutoShaking ? "animate-spin" : ""}`} /> {isAutoShaking ? "Shaking..." : "Give me another"}
             </button>
             {revealed && (
               <a
@@ -82,11 +124,16 @@ export function ShakeForSip() {
             dragConstraints={{ left: -140, right: 140 }}
             dragElastic={0.6}
             onDragEnd={(_, info) => {
-              if (Math.abs(info.velocity.x) > 400 || Math.abs(info.offset.x) > 80) shuffle();
+              // Trigger on quick swipe (velocity > 300) or any drag movement while not already shaking
+              if (!isAutoShaking && (Math.abs(info.velocity.x) > 300 || Math.abs(info.offset.x) > 40)) {
+                initiateShake();
+              }
             }}
+            animate={controls}
             whileTap={{ scale: 0.97 }}
-            style={{ x: springX, rotate }}
-            className="relative h-56 w-24 sm:h-64 sm:w-28 cursor-grab active:cursor-grabbing focus:outline-none"
+            style={{ rotate }}
+            className="relative h-56 w-24 sm:h-64 sm:w-28 cursor-grab active:cursor-grabbing focus:outline-none disabled:opacity-50"
+            disabled={isAutoShaking}
           >
             {/* Bottle SVG */}
             <svg viewBox="0 0 100 240" className="h-full w-full drop-shadow-2xl">
